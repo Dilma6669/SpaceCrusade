@@ -1,0 +1,26 @@
+﻿<Properties StartupItem="Assembly-CSharp.csproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\TestPlayerScript.cs">
+    <Files>
+      <File FileName="Assets\Scripts\TestPlayerScript.cs" Line="31" Column="2" />
+      <File FileName="Assets\Scripts\HighCameraController.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\PlayersManager.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\CameraManager.cs" Line="14" Column="70" />
+      <File FileName="Assets\Scripts\DefaultCubeScript.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\EdgeCollidersScript.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\MapManager.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\MapPieceScript.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\GridManager.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\PathFinding.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\PanelPieceScript.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\GameManager.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\GridBox.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\UserInputController.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\PlayerArrowController.cs" Line="1" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>
