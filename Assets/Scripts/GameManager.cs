@@ -51,15 +51,15 @@ public class GameManager : MonoBehaviour {
 		worldSizeZ = master.worldSizeZ;
 		worldSizeY = master.worldSizeY;
 
+		totalCubesInX = worldSizeX * numCubesInX;
+		totalCubesInZ = worldSizeZ * numCubesInZ;
+		totalCubesInY = worldSizeY * numCubesInY;
+
 
 		gridManager = FindObjectOfType<GridManager> ();
 		mapManager = FindObjectOfType<MapManager> ();
 		guiController = FindObjectOfType<GUIController> ();
 		//testPlayerScript = FindObjectOfType<TestPlayerScript> ();
-
-		totalCubesInX = worldSizeX * numCubesInX;
-		totalCubesInZ = worldSizeZ * numCubesInZ;
-		totalCubesInY = worldSizeY * numCubesInY;
 
 		WorldGrid_CubeRef_LayersList = new List<GameObject[,]>();
 
@@ -119,9 +119,9 @@ public class GameManager : MonoBehaviour {
 		layMaps = false;
 		activateGrid = true;
 		if (gridManager != null) {
-			gridManager.BuildGrid ();
+			gridManager.BuildGridObjLookup ();
 			//gridManager.GetNeighbourConnections ();
-			gridManager.ActivateGrid ();
+			//gridManager.ActivateGrid ();
 		}
 	}
 

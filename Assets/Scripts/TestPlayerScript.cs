@@ -17,6 +17,7 @@ public class TestPlayerScript : MonoBehaviour {
 
 	private GameManager gameManagerScript;
 	private MapManager mapManagerScript;
+	private GridManager gridManagerScript;
 	private PathFinding pathFindingScript;
 
 	private CameraManager cameraManagerScript;
@@ -41,6 +42,10 @@ public class TestPlayerScript : MonoBehaviour {
 	Animator rightLegAnimator;
 	///////////////////////////
 
+	public int forcePlayerX;
+	public int forcePlayerZ;	
+	public int forcePlayerY;
+
 
 	// Use this for initialization
 	void Start () {
@@ -53,6 +58,7 @@ public class TestPlayerScript : MonoBehaviour {
 
 		gameManagerScript = FindObjectOfType<GameManager> ();
 		mapManagerScript = FindObjectOfType<MapManager> ();
+		gridManagerScript = FindObjectOfType<GridManager> ();
 		cameraManagerScript = FindObjectOfType<CameraManager> ();
 		pathFindingScript = FindObjectOfType<PathFinding> ();
 
@@ -106,8 +112,18 @@ public class TestPlayerScript : MonoBehaviour {
 		Debug.Log ("PlayerActivated");
 		playerActivated = true;
 		rend.material.color = Color.green;
-		TestRayCast ();
+		//TestRayCast ();
 		gameManagerScript.playerSelected = true;
+		ForceMovePlayer ();
+	}
+
+	public void ForceMovePlayer() {
+		float playerheight = 5.13f;
+		Vector3 vect = (Vector3)gridManagerScript.gridObjLookup[new Vector3 (forcePlayerX, forcePlayerZ, forcePlayerY)];
+		targetCubePos = new Vector3(vect.x, (vect.y + playerheight), vect.z);
+		Debug.Log ("targetCubePos: " + targetCubePos.x + " "  + targetCubePos.y + " " + targetCubePos.z);
+		playerMoving = true;
+		PlayerAnimator ();
 	}
 
 

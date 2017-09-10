@@ -26,6 +26,8 @@ public class GridManager : MonoBehaviour {
 
 	public Hashtable gridObjLookup;
 
+	public GridObjectNEW[] objects; 
+
 	// Use this for initialization
 	void Start () {
 		
@@ -48,16 +50,11 @@ public class GridManager : MonoBehaviour {
 	}
 	
 
-
-	public void BuildGrid() {
+	public void BuildGridObjLookup() {
 
 		totalObjectsX = gameManager.totalCubesInX; // 12
 		totalObjectsZ = gameManager.totalCubesInZ; //12
 		totalObjectsY = gameManager.totalCubesInY; //3
-
-		StartCoroutine (WaitForLayers (1.0f));
-	}
-	IEnumerator WaitForLayers(float secs) {
 
 		int objectsCountX = 0;
 		int objectsCountZ = 0;
@@ -86,33 +83,33 @@ public class GridManager : MonoBehaviour {
 
 			for (int cube = 0; cube < gameManager.numCubesInY; cube++) {
 
-				// build 2d array (for each layer) to record cube references. and put 2d array in list in gameManager
-				//GameObject[,] WorldGrid_LayerCubeRef = new GameObject[totalObjectsX, totalObjectsZ];
-				//gameManager.WorldGrid_CubeRef_LayersList.Add (WorldGrid_LayerCubeRef);
-				///////////////////////////////////////////////////////////
-
 				spawnPosX = startX;
 				spawnPosZ = startZ;
 				spawnPosY = (cube * cubeHeight + (layer * layerHeight));
 
+				objectsCountX = 0;
+				objectsCountZ = 0;
+
 				for (int i = 0; i < totalObjectsZ; i++) {
 
 					spawnPosX = startX;
-					objectsCountX = 0;
 					spawn.transform.localPosition = new Vector3 (spawnPosX, spawnPosY, spawnPosZ);
+
+					objectsCountX = 0;
 
 					for (int j = 0; j < totalObjectsX; j++) {
 
-						GameObject gridObject = Instantiate (gridObjectPrefab, spawn.transform, false);
-						gridObject.transform.SetParent (transform);
-						GridBox objScript = gridObject.transform.GetComponent<GridBox> ();
-						objScript.gridLocX = objectsCountX;
-						objScript.gridLocZ = objectsCountZ;
-						objScript.gridLocY = objectsCountY;
+						//GameObject GridObject = Instantiate (gridObjectPrefab, spawn.transform, false);
+						//GridObject.transform.SetParent (this.gameObject.transform);
 
-						// put vector location, gridObject key, value pairs into hashmap for easy lookup
-						Vector3 vect = new Vector3 (objScript.gridLocX, objScript.gridLocZ, objScript.gridLocY);
-						gridObjLookup.Add (vect, gridObject);
+						//Debug.Log ("Vector3 (spawnPosX, spawnPosY, spawnPosZ): " + spawn.transform.localPosition.x + " " +  spawn.transform.localPosition.y + " " +  spawn.transform.localPosition.z);
+						// put vector location, eg, grid Location 0,0,0 and World Location 35, 0, 40 value pairs into hashmap for easy lookup
+						Vector3 gridLoc = new Vector3 (objectsCountX, objectsCountZ, objectsCountY);
+						Vector3 worldLoc = new Vector3 (spawn.transform.localPosition.x, spawn.transform.localPosition.y, spawn.transform.localPosition.z);
+						//Debug.Log ("Vector3 (gridLoc): x: " + gridLoc.x + " z: " +  gridLoc.y + " y: " +  gridLoc.z);
+						//Debug.Log ("Vector3 (worldLoc): x: " + worldLoc.x + " y: " +  worldLoc.y + " z: " +  worldLoc.z);
+						//Debug.Log ("-----");
+						gridObjLookup.Add (gridLoc, worldLoc);
 
 						spawnPosX += 10;
 						spawn.transform.localPosition = new Vector3 (spawnPosX, spawnPosY, spawnPosZ);
@@ -123,26 +120,64 @@ public class GridManager : MonoBehaviour {
 				}
 				objectsCountY += 1;
 			}
-			// wait for each layer to load before loading next (experiment to see if loads faster)
-			Debug.Log("Layer finished");
-			yield return new WaitForSeconds (secs);
 		}
-		GetNeighbourConnections ();
-	}
-
-	public void GetNeighbourConnections() {
-
-		// GET ALL CUBES AND ASSIGN ALL THEIR NEIGHBOURS TO THEM
-		foreach (Transform child in transform) {
-			if (child && child.GetComponent<GridBox> ()) {
-				child.GetComponent<GridBox> ().GetNeighbourConnections ();
-			}
-		}
-		Debug.Log ("finsihed getting neighbours");
-		
-
 	}
 		
+
+	/////////////////////////////////////////////////////////////
+	// Returns a list of World locations of all node Neighbours
+	// order of neighbours gets assigned like grid objects are build
+	// X, z, y
+	// original node is set in the middle at position 1,1,1
+	// first neighbour is at 0,0,0, then 1,0,0, then 2,0,0 etc
+	public List<Vector3> GetNeighbourConnections(Vector3 ownVect) {
+
+		List<Vector3> neighbours = new List<Vector3>();
+
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z - 1, ownVect.y - 1)]); // position 000
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z - 1, ownVect.y - 1)]); // position 100
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z - 1, ownVect.y - 1)]); // position 200
+
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z + 0, ownVect.y - 1)]);
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z + 0, ownVect.y - 1)]);
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z + 0, ownVect.y - 1)]);
+
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z + 1, ownVect.y - 1)]);
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z + 1, ownVect.y - 1)]);
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z + 1, ownVect.y - 1)]);
+
+		/////////////////////////////////
+
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z - 1, ownVect.y + 0)]); // position 001
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z - 1, ownVect.y + 0)]); // position 101
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z - 1, ownVect.y + 0)]); // position 201
+
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z + 0, ownVect.y + 0)]);
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z + 0, ownVect.y + 0)]); // Oiginal Node
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z + 0, ownVect.y + 0)]);
+
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z + 1, ownVect.y + 0)]);
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z + 1, ownVect.y + 0)]);
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z + 1, ownVect.y + 0)]);
+
+		/////////////////////////////////
+
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z - 1, ownVect.y + 1)]); // position 002
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z - 1, ownVect.y + 1)]); // position 102
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z - 1, ownVect.y + 1)]); // position 202
+
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z + 0, ownVect.y + 1)]);
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z + 0, ownVect.y + 1)]);
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z + 0, ownVect.y + 1)]);
+
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z + 1, ownVect.y + 1)]);
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z + 1, ownVect.y + 1)]);
+		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z + 1, ownVect.y + 1)]);
+		/////////////////////////////////
+
+		return neighbours;
+	}
+
 
 	//////////////////////////////////////////////
 	public void ActivateGrid() {
@@ -151,10 +186,9 @@ public class GridManager : MonoBehaviour {
 				child.GetComponent<BoxCollider> ().enabled = true;
 			}
 		}
-		StartCoroutine (WaitForTriggers (1.0f));
-	} // Wait For Triggers To Register (this is frustrating);
-	IEnumerator WaitForTriggers(float secs) {
-		yield return new WaitForSeconds (secs);
+		Invoke ("WaitForTriggers", 1.0f);
+	}
+	public void WaitForTriggers() {
 		gameManager.GAMEMASTER_GridFinish ();
 	}
 	/////////////////////////////////////////////
