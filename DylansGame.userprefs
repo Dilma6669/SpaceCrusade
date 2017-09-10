@@ -4,7 +4,7 @@
     <Files>
       <File FileName="Assets\Scripts\MASTER.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\GameManager.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\GridManager.cs" Line="126" Column="2" />
+      <File FileName="Assets\Scripts\GridManager.cs" Line="103" Column="36" />
       <File FileName="Assets\Scripts\MapManager.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\GridObjectNEW.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\TestPlayerScript.cs" Line="1" Column="1" />
