@@ -41,35 +41,35 @@ public class UserInputController : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void Update () {
-		
-		if (mouseFollPrefab != null) {
-			mouseFollower.transform.position = mousePosition;
-	
-
-			if (gameManager.playerSelected) {
-				ray = viewCamera.ScreenPointToRay (Input.mousePosition); //Gives screen position (mouse position), return a ray from the camera to that position to infinity.
-				if (Physics.Raycast (ray, out rayHit)) { //Gives OUT raydistance then assigns it a variable. Will return true if the ray itersects with a collider and will also know length.
-					Debug.DrawLine (ray.origin, rayHit.point, Color.red);
-					mousePosition = new Vector3 (rayHit.point.x, (rayHit.point.y + mouseFollYOffset), rayHit.point.z);
-				}
-			}
-
-
-			if (Input.GetMouseButtonUp (2)) {
-				setArrowPos = false;
-			}
-			if (Input.GetMouseButtonDown (2) && setArrowPos == false) {
-				setArrowPos = true;
-				mousePosHELD = mousePosition;
-				playerArrow.transform.position = mousePosHELD;
-			}
-			if (setArrowPos == false) {
-				playerArrow.transform.position = mousePosition;
-			}
-		}
-
-
-
-	}
+//	void Update () {
+//		
+//		if (mouseFollPrefab != null) {
+//			mouseFollower.transform.position = mousePosition;
+//	
+//
+//			if (gameManager.playerSelected) {
+//				ray = viewCamera.ScreenPointToRay (Input.mousePosition); //Gives screen position (mouse position), return a ray from the camera to that position to infinity.
+//				if (Physics.Raycast (ray, out rayHit)) { //Gives OUT raydistance then assigns it a variable. Will return true if the ray itersects with a collider and will also know length.
+//					Debug.DrawLine (ray.origin, rayHit.point, Color.red);
+//					mousePosition = new Vector3 (rayHit.point.x, (rayHit.point.y + mouseFollYOffset), rayHit.point.z);
+//				}
+//			}
+//
+//
+//			if (Input.GetMouseButtonUp (2)) {
+//				setArrowPos = false;
+//			}
+//			if (Input.GetMouseButtonDown (2) && setArrowPos == false) {
+//				setArrowPos = true;
+//				mousePosHELD = mousePosition;
+//				playerArrow.transform.position = mousePosHELD;
+//			}
+//			if (setArrowPos == false) {
+//				playerArrow.transform.position = mousePosition;
+//			}
+//		}
+//
+//
+//
+//	}
 }

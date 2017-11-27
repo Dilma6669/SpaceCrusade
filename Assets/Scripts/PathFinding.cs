@@ -5,8 +5,8 @@ using UnityEngine;
 public class PathFinding : MonoBehaviour {
 
 	private List<GameObject> openNodesList; // the set of nodes to be evaluated
-	private GameObject startNode;
-	private GameObject finishNode;
+	private Vector3 startNode;
+	private Vector3 finishNode;
 	private GameObject[,] OpenSetGrid;
 
 	private List<GameObject> closedNodesList; // The set of nodes already evaluated
@@ -31,20 +31,22 @@ public class PathFinding : MonoBehaviour {
 
 	}
 		
-	public void FindPath(List<GameObject> _openNodes, GameObject _startNode, GameObject _finishNode) {
-		openNodesList  = _openNodes;
-		startNode  = _startNode;
-		finishNode = _finishNode;
+	public void FindPath(Vector3 _startNode, Vector3 _finishNode) {
+//		openNodesList = gridManagerScript.GetPathFindingCubeList();
+//		startNode  = _startNode;
+//		finishNode = _finishNode;
+//
+//		Debug.Log ("size of openNodesList: " + openNodesList.Count);
 
-		SetOpenSetSize ();
+		//SetOpenSetSize ();
 	}
 
 
 
 	void SetOpenSetSize() {
 
-		openSetSizeSmallZ = gameManagerScript.MapSizeGetter("Z") * gameManagerScript.numCubesInZ;
-		openSetSizeSmallX = gameManagerScript.MapSizeGetter("X") * gameManagerScript.numCubesInX;
+		//openSetSizeSmallZ = gameManagerScript.MapSizeGetter("Z") * gameManagerScript.numCubesInZ;
+		//openSetSizeSmallX = gameManagerScript.MapSizeGetter("X") * gameManagerScript.numCubesInX;
 		openSetSizeLargeZ = -1;
 		openSetSizeLargeX = -1;
 		OpenSetGrid = null;

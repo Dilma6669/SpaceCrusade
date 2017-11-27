@@ -37,6 +37,7 @@ public class PanelPieceScript : MonoBehaviour {
 	void OnMouseDown() {
 
 		cubeScript.CubeSelect ("Move");
+		PanelPieceChangeColor("Green");
 
 	}
 

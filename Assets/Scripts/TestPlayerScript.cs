@@ -4,31 +4,38 @@ using UnityEngine;
 
 public class TestPlayerScript : MonoBehaviour {
 
-	public List<GameObject> mapsPlacedRef;
-	public List<GameObject> pathfindingCubeList;
-	private Transform cubesGround;
+	//public List<GameObject> mapsPlacedRef;
+	//public List<GameObject> pathfindingCubeList;
+	//private Transform cubesGround;
 
-	private Vector3 startingPos;
+	//private Vector3 startingPos;
 
 	public bool playerActivated;
+
+	public Dictionary<string, int> playerStats;
 
 	private Renderer rend;
 	private GameObject sensor;
 
-	private GameManager gameManagerScript;
-	private MapManager mapManagerScript;
-	private GridManager gridManagerScript;
-	private PathFinding pathFindingScript;
+	OBSERVER Observer;
 
-	private CameraManager cameraManagerScript;
+//	private GameManager gameManagerScript;
+//	private MapManager mapManagerScript;
+	GridManager gridManager;
+//	private PathFinding pathFindingScript;
 
-	public GameObject currentStandingCube;
-	public GameObject targetCubeObject;
-	public Vector3 targetCubePos;
+//	private CameraManager cameraManagerScript;
+
+	public Vector3 currentGridPos;
+	public Vector3 currentPosVect;
+	public Vector3 targetGridPos;
+	public Vector3 targetPosVect;
 	public bool playerMoving = false;
 
 	private int moveSpeed = 30;
 	private int rotateDamping = 6;
+
+	public int playerRotation;
 
 	//// Animation stuff /////
 	public GameObject leftArmJoint;
@@ -53,17 +60,21 @@ public class TestPlayerScript : MonoBehaviour {
 		rend = transform.GetComponentInChildren<Renderer> ();
 		sensor = transform.Find ("Sensor").gameObject;
 
-		transform.position = Vector3.zero;
-		transform.position = currentStandingCube.transform.position;
+		playerStats = new Dictionary<string, int> {{"M", 4},{"WS", 4}, {"BS", 4},{"S", 4}, {"T", 4},{"W", 4},{"I", 4},{"A", 4}, {"LD", 4},{"C", 1}, {"F", 0}};
 
-		gameManagerScript = FindObjectOfType<GameManager> ();
-		mapManagerScript = FindObjectOfType<MapManager> ();
-		gridManagerScript = FindObjectOfType<GridManager> ();
-		cameraManagerScript = FindObjectOfType<CameraManager> ();
-		pathFindingScript = FindObjectOfType<PathFinding> ();
+		//transform.position = Vector3.zero;
+		//transform.position = currentStandingCube.transform.position;
 
-		mapsPlacedRef = new List<GameObject> ();
-		pathfindingCubeList = new List<GameObject> ();
+		Observer = FindObjectOfType<OBSERVER> ();
+
+//		gameManagerScript = FindObjectOfType<GameManager> ();
+//		mapManagerScript = FindObjectOfType<MapManager> ();
+		gridManager = FindObjectOfType<GridManager> ();
+//		cameraManagerScript = FindObjectOfType<CameraManager> ();
+//		pathFindingScript = FindObjectOfType<PathFinding> ();
+
+		//mapsPlacedRef = new List<GameObject> ();
+		//pathfindingCubeList = new List<GameObject> ();
 
 		SetManagerCameras ();
 
@@ -71,40 +82,48 @@ public class TestPlayerScript : MonoBehaviour {
 		rightArmAnimator = RightArmJoint.transform.GetComponent<Animator>();
 		leftLegAnimator = leftLegJoint.transform.GetComponent<Animator>();
 		rightLegAnimator = RightLegJoint.transform.GetComponent<Animator>();
+
+		Quaternion target = Quaternion.Euler(0, 0, playerRotation);
+		this.transform.rotation = target;
+
+		//Invoke ("ForcePlayerMoveAtStart", 1.0f);
 		
+	}
+
+	public void PutPlayerIntoStartPosition() {
+		//ForceMovePlayer (new Vector3 (forcePlayerX, forcePlayerZ, forcePlayerY));
+		transform.position = (Vector3)gridManager.GridLocToWorldLocLookup [new Vector3 (forcePlayerX, forcePlayerZ, forcePlayerY)];
+		currentGridPos = new Vector3 (forcePlayerX, forcePlayerZ, forcePlayerY);
+		currentPosVect = transform.position;
 	}
 	
 	// Update is called once per frame
 	void Update () {
 
 		if (playerMoving) {
-			if (transform.position == targetCubePos) {
-				playerMoving = false;
-				PlayerAnimator ();
-				currentStandingCube = targetCubeObject;
-				targetCubeObject = null;
-				TestRayCast ();
-			} else if (transform.position != targetCubePos) {
-				var lookPos = targetCubePos - transform.position;
+			if (transform.position == targetPosVect) {
+				MovePlayerFinish ();
+			} else if (transform.position != targetPosVect) {
+				var lookPos = targetPosVect - transform.position;
 				var rotation = Quaternion.LookRotation (lookPos);
 				transform.rotation = Quaternion.Slerp (transform.rotation, rotation, Time.deltaTime * rotateDamping);
-				this.gameObject.transform.position = Vector3.MoveTowards (transform.position, targetCubePos, (moveSpeed * Time.deltaTime));
+				this.gameObject.transform.position = Vector3.MoveTowards (transform.position, targetPosVect, (moveSpeed * Time.deltaTime));
 			}
 		}
 	}
 		
 
 
-	public void PlayerOnGameStart() {
-		mapsPlacedRef = mapManagerScript.mapsPlaced;
-	}
+//	public void PlayerOnGameStart() {
+//		mapsPlacedRef = mapManagerScript.mapsPlaced;
+//	}
 
 
 		
 	void OnMouseDown() {
-		if (gameManagerScript.GAMESTART) {
+		//if (gameManagerScript.GAMESTART) {
 			PlayerActivated ();
-		}
+		//}
 	}
 
 
@@ -112,31 +131,55 @@ public class TestPlayerScript : MonoBehaviour {
 		Debug.Log ("PlayerActivated");
 		playerActivated = true;
 		rend.material.color = Color.green;
-		//TestRayCast ();
-		gameManagerScript.playerSelected = true;
-		ForceMovePlayer ();
+		Observer.UpdatePlayerSelected(this.gameObject);
+		gridManager.SendOutRays(true, currentGridPos, playerStats["M"]);
+		//GameObject obj = (GameObject)gridManagerScript.GridLocToGridObjLookup[new Vector3 (currentCubePos.x, currentCubePos.z, currentCubePos.y)];
+		//obj.GetComponent<GridBox> ().linked = true;
+		//MovePlayerStart ();
 	}
 
-	public void ForceMovePlayer() {
-		float playerheight = 5.13f;
-		Vector3 vect = (Vector3)gridManagerScript.gridObjLookup[new Vector3 (forcePlayerX, forcePlayerZ, forcePlayerY)];
-		targetCubePos = new Vector3(vect.x, (vect.y + playerheight), vect.z);
-		Debug.Log ("targetCubePos: " + targetCubePos.x + " "  + targetCubePos.y + " " + targetCubePos.z);
+
+
+//	public void MovePlayerStart() {
+//		GameObject obj = (GameObject)gridManager.GridLocToGridObjLookup[new Vector3 (currentGridPos.x, currentGridPos.z, currentGridPos.y)];
+//		obj.GetComponent<GridBox> ().linked = false;
+//		gridManager.ClearConnectionsForObjects ();
+//		ForceMovePlayer(new Vector3 (forcePlayerX, forcePlayerZ, forcePlayerY));
+//		//pathFindingScript.FindPath (transform.position, targetCubePos);
+//	}
+
+	public void ForceMovePlayer(Vector3 posToMoveTo) {
+		targetGridPos = posToMoveTo;
+		targetPosVect = (Vector3)gridManager.GridLocToWorldLocLookup[targetGridPos];
+
 		playerMoving = true;
 		PlayerAnimator ();
 	}
 
-
-	public void MovePlayer(GameObject _targetCube) {
-
-		if (playerActivated) {
-			targetCubeObject = _targetCube;
-			targetCubePos = _targetCube.transform.position;
-			pathFindingScript.FindPath (pathfindingCubeList, currentStandingCube, _targetCube);
-			playerMoving = true;
-			PlayerAnimator ();
-		}
+	public void MovePlayerFinish() {
+		Debug.Log ("Player finish move");
+		playerMoving = false;
+		PlayerAnimator ();
+		currentGridPos = targetGridPos;
+		currentPosVect = transform.position;
+		gridManager.SendOutRays(true, currentGridPos, playerStats["M"]);
+		//targetPosVect = (Vector3)new Vector3 (-1, -1, -1);
+		//targetGridPos = (Vector3)new Vector3 (-1, -1, -1);
+		//gridManager.SendOutRays(false, currentGridPos);
+		//CheckPlayerCubeConnections();
 	}
+
+
+//	public void MovePlayer(Vector3 _targetCube) {
+//		Debug.Log ("MovePlayer");
+//		if (playerActivated) {
+//			//targetCubeObject = _targetCube;
+//			targetGridPos = _targetCube;
+//			//pathFindingScript.FindPath (pathfindingCubeList, transform.position, _targetCube);
+//			playerMoving = true;
+//			PlayerAnimator ();
+//		}
+//	}
 
 
 	public void PlayerAnimator() {
@@ -154,61 +197,67 @@ public class TestPlayerScript : MonoBehaviour {
 	}
 		
 
+//	void CheckPlayerCubeConnections() {
+//		Debug.Log ("CheckPlayerCubeConnections");
+//
+//	}
 
-	void TestRayCast() {
-		pathfindingCubeList.Clear ();
-		bool cubeVisible = false;
 
-		RaycastHit rayHit;
-		Vector3 rayDirection;
-
-		for (int LAYER = 0; LAYER <= gameManagerScript.MapSizeGetter("Y"); LAYER++) {
-			//ground Level
-			foreach (GameObject plane in mapsPlacedRef) {
-				if (plane.transform.Find ("CubesGround_" + LAYER)) {
-					cubesGround = plane.transform.Find ("CubesGround_" + LAYER).transform;
-					foreach (Transform row in cubesGround) {
-						foreach (Transform DefaultCube in row) {
-							cubeVisible = false;
-
-							rayDirection = DefaultCube.position - sensor.transform.position;
-
-							if (Physics.Linecast (sensor.transform.position, DefaultCube.position, out rayHit)) {
-							
-								foreach (Transform panel in DefaultCube) {
-									if (cubeVisible == false) {
-										if (panel.transform.tag != "CubeSelect") {
-											rayDirection = panel.position - sensor.transform.position;
-											if (Physics.Linecast (transform.position, panel.position, out rayHit)) {
-												//Debug.Log ("BLocked");
-												Debug.DrawRay (sensor.transform.position, rayDirection, Color.cyan);
-											} else {
-												//Debug.Log ("Hit");
-												cubeVisible = true;
-												Debug.DrawRay (sensor.transform.position, rayDirection, Color.cyan);
-											}
-										}
-									}
-								}
-
-							} else {
-								Debug.DrawRay (transform.position, rayDirection, Color.cyan);
-								cubeVisible = true;
-							}
-
-							if (cubeVisible) {
-								DefaultCube.GetComponent<DefaultCubeScript> ().CubeVisible ();
-								pathfindingCubeList.Add (DefaultCube.gameObject);
-							} else {
-								DefaultCube.GetComponent<DefaultCubeScript> ().CubeNotVisible ();
-							}
-						}
-					}
-				}
-			}
-		}
-
-	}
+//	void TestRayCast() {
+//		Debug.Log ("TestRayCast");
+//		pathfindingCubeList.Clear ();
+//		bool cubeVisible = false;
+//
+//		RaycastHit rayHit;
+//		Vector3 rayDirection;
+//
+//		for (int LAYER = 0; LAYER <= gameManagerScript.MapSizeGetter("Y"); LAYER++) {
+//			//ground Level
+//			foreach (GameObject plane in mapsPlacedRef) {
+//				if (plane.transform.Find ("CubesGround_" + LAYER)) {
+//					cubesGround = plane.transform.Find ("CubesGround_" + LAYER).transform;
+//					foreach (Transform row in cubesGround) {
+//						foreach (Transform DefaultCube in row) {
+//							cubeVisible = false;
+//
+//							rayDirection = DefaultCube.position - sensor.transform.position;
+//
+//							if (Physics.Linecast (sensor.transform.position, DefaultCube.position, out rayHit)) {
+//							
+//								foreach (Transform panel in DefaultCube) {
+//									if (cubeVisible == false) {
+//										if (panel.transform.tag != "CubeSelect") {
+//											rayDirection = panel.position - sensor.transform.position;
+//											if (Physics.Linecast (transform.position, panel.position, out rayHit)) {
+//												//Debug.Log ("BLocked");
+//												Debug.DrawRay (sensor.transform.position, rayDirection, Color.cyan);
+//											} else {
+//												//Debug.Log ("Hit");
+//												cubeVisible = true;
+//												Debug.DrawRay (sensor.transform.position, rayDirection, Color.cyan);
+//											}
+//										}
+//									}
+//								}
+//
+//							} else {
+//								Debug.DrawRay (transform.position, rayDirection, Color.cyan);
+//								cubeVisible = true;
+//							}
+//
+//							if (cubeVisible) {
+//								DefaultCube.GetComponent<DefaultCubeScript> ().CubeVisible ();
+//								pathfindingCubeList.Add (DefaultCube.gameObject);
+//							} else {
+//								DefaultCube.GetComponent<DefaultCubeScript> ().CubeNotVisible ();
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//
+//	}
 
 
 	public void SetManagerCameras() {
@@ -216,7 +265,7 @@ public class TestPlayerScript : MonoBehaviour {
 		GameObject highcam = transform.Find ("Player_HighCameraBox").gameObject;
 		GameObject lowcam = transform.Find ("Player_LowCameraBox").gameObject;
 
-		cameraManagerScript.SetMainCamerasObjectToFollow (highcam, lowcam);
+		//cameraManagerScript.SetMainCamerasObjectToFollow (highcam, lowcam);
 
 	}
 

@@ -6,6 +6,7 @@ public class GridManager : MonoBehaviour {
 
 	// THE MASTER /////////////////////
 	MASTER master;
+	OBSERVER Observer;
 	////////////////////////////////////
 	private int worldSizeX;
 	private int worldSizeZ;
@@ -18,15 +19,16 @@ public class GridManager : MonoBehaviour {
 	private GameManager gameManager;
 
 	public GameObject gridObjectPrefab;
-
 	public GameObject spawnPrefab;
 	private GameObject spawn;
 
 	// making a lookUp table with objects and there Vector3 locations
 
-	public Hashtable gridObjLookup;
+	public Hashtable GridLocToWorldLocLookup;
+	public Hashtable GridLocToGridObjLookup;
 
-	public GridObjectNEW[] objects; 
+	public Hashtable pathfindingCubeList;
+	public int[,] pathFindingGrid;
 
 	// Use this for initialization
 	void Start () {
@@ -34,6 +36,7 @@ public class GridManager : MonoBehaviour {
 		// THE MASTER /////////////////////
 		// designed as a easy user input for designer
 		master = FindObjectOfType<MASTER> ();
+		Observer = FindObjectOfType<OBSERVER> ();
 		////////////////////////////////////
 		worldSizeX = master.worldSizeX;
 		worldSizeZ = master.worldSizeZ;
@@ -41,13 +44,22 @@ public class GridManager : MonoBehaviour {
 
 		gameManager = FindObjectOfType<GameManager> ();
 
-		gridObjLookup = new Hashtable ();
+		GridLocToWorldLocLookup = new Hashtable ();
+		GridLocToGridObjLookup = new Hashtable ();
+
+		pathfindingCubeList = new Hashtable ();
 
 		// SPAWN //
 		spawn = Instantiate (spawnPrefab, transform, false);
 		////////////////
 
 	}
+
+//	void Update() {
+//
+//		//GetNeighbourConnections ();
+//
+//	}
 	
 
 	public void BuildGridObjLookup() {
@@ -60,6 +72,7 @@ public class GridManager : MonoBehaviour {
 		int objectsCountZ = 0;
 		int objectsCountY = 0;
 
+		int sizeOfBoard = -110;
 		int halfSizeOfBoard = -55;
 		int squareDistance = -10;
 
@@ -70,7 +83,10 @@ public class GridManager : MonoBehaviour {
 		int spawnPosZ;
 		int spawnPosY;
 
-		int startX = ((worldSizeX * halfSizeOfBoard) + (worldSizeX / 2 * squareDistance));
+
+		int baseEquation = (sizeOfBoard*worldSizeX)/2 + (squareDistance/2)*(worldSizeX-1);
+
+		int startX = baseEquation;
 		int startZ = halfSizeOfBoard;
 		int startY = 0;
 
@@ -99,17 +115,26 @@ public class GridManager : MonoBehaviour {
 
 					for (int j = 0; j < totalObjectsX; j++) {
 
-						//GameObject GridObject = Instantiate (gridObjectPrefab, spawn.transform, false);
-						//GridObject.transform.SetParent (this.gameObject.transform);
-
-						//Debug.Log ("Vector3 (spawnPosX, spawnPosY, spawnPosZ): " + spawn.transform.localPosition.x + " " +  spawn.transform.localPosition.y + " " +  spawn.transform.localPosition.z);
+						///////////////////////////////
 						// put vector location, eg, grid Location 0,0,0 and World Location 35, 0, 40 value pairs into hashmap for easy lookup
 						Vector3 gridLoc = new Vector3 (objectsCountX, objectsCountZ, objectsCountY);
 						Vector3 worldLoc = new Vector3 (spawn.transform.localPosition.x, spawn.transform.localPosition.y, spawn.transform.localPosition.z);
-						//Debug.Log ("Vector3 (gridLoc): x: " + gridLoc.x + " z: " +  gridLoc.y + " y: " +  gridLoc.z);
+						//Debug.Log ("Vector3 (gridLoc): x: " + gridLoc.x + " z: " +  gridLoc.z + " y: " +  gridLoc.y);
 						//Debug.Log ("Vector3 (worldLoc): x: " + worldLoc.x + " y: " +  worldLoc.y + " z: " +  worldLoc.z);
-						//Debug.Log ("-----");
-						gridObjLookup.Add (gridLoc, worldLoc);
+						GridLocToWorldLocLookup.Add (gridLoc, worldLoc);
+						/////////////////////////////////
+
+
+						////////////////////////////////////////
+						GameObject GridObject = Instantiate (gridObjectPrefab, spawn.transform, false);
+						GridObject.transform.SetParent (this.gameObject.transform);
+						GridBox objScript = GridObject.GetComponent<GridBox> ();
+						objScript.gridLocX = objectsCountX;
+						objScript.gridLocZ = objectsCountZ;
+						objScript.gridLocY = objectsCountY;
+						//Debug.Log ("GridLocToGridObjLookup.Add to: " + gridLoc.x + " " + gridLoc.y + " " + gridLoc.z);
+						GridLocToGridObjLookup.Add (gridLoc, GridObject);
+						//////////////////////////////////////////
 
 						spawnPosX += 10;
 						spawn.transform.localPosition = new Vector3 (spawnPosX, spawnPosY, spawnPosZ);
@@ -121,62 +146,89 @@ public class GridManager : MonoBehaviour {
 				objectsCountY += 1;
 			}
 		}
+		Observer.GridBuildingComplete (true);
+		Invoke ("SetAllGridsNeighbours", 2.0f);
 	}
-		
 
-	/////////////////////////////////////////////////////////////
-	// Returns a list of World locations of all node Neighbours
-	// order of neighbours gets assigned like grid objects are build
-	// X, z, y
-	// original node is set in the middle at position 1,1,1
-	// first neighbour is at 0,0,0, then 1,0,0, then 2,0,0 etc
-	public List<Vector3> GetNeighbourConnections(Vector3 ownVect) {
-
-		List<Vector3> neighbours = new List<Vector3>();
-
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z - 1, ownVect.y - 1)]); // position 000
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z - 1, ownVect.y - 1)]); // position 100
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z - 1, ownVect.y - 1)]); // position 200
-
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z + 0, ownVect.y - 1)]);
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z + 0, ownVect.y - 1)]);
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z + 0, ownVect.y - 1)]);
-
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z + 1, ownVect.y - 1)]);
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z + 1, ownVect.y - 1)]);
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z + 1, ownVect.y - 1)]);
-
-		/////////////////////////////////
-
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z - 1, ownVect.y + 0)]); // position 001
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z - 1, ownVect.y + 0)]); // position 101
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z - 1, ownVect.y + 0)]); // position 201
-
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z + 0, ownVect.y + 0)]);
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z + 0, ownVect.y + 0)]); // Oiginal Node
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z + 0, ownVect.y + 0)]);
-
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z + 1, ownVect.y + 0)]);
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z + 1, ownVect.y + 0)]);
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z + 1, ownVect.y + 0)]);
-
-		/////////////////////////////////
-
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z - 1, ownVect.y + 1)]); // position 002
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z - 1, ownVect.y + 1)]); // position 102
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z - 1, ownVect.y + 1)]); // position 202
-
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z + 0, ownVect.y + 1)]);
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z + 0, ownVect.y + 1)]);
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z + 0, ownVect.y + 1)]);
-
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x - 1, ownVect.z + 1, ownVect.y + 1)]);
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 0, ownVect.z + 1, ownVect.y + 1)]);
-		neighbours.Add((Vector3)gridObjLookup[new Vector3 (ownVect.x + 1, ownVect.z + 1, ownVect.y + 1)]);
-		/////////////////////////////////
-
-		return neighbours;
+	public void SetAllGridsNeighbours() {
+		// x, z, y
+		// grid location
+		for (int y = 0; y < gameManager.totalCubesInY; y++) {
+			for (int z = 0; z < gameManager.totalCubesInZ; z++) {
+				for (int x = 0; x < gameManager.totalCubesInX; x++) {
+					GameObject GridObject = (GameObject)GridLocToGridObjLookup[new Vector3 (x, z, y)];
+					GridObject.GetComponent<GridBox> ().GetNeighbourConnectionsOnStartUp();
+				}
+			}
+		}
+		Observer.GridNeighboursComplete (true);
 	}
+
+
+	public void ClearConnectionsForObjects() {
+		foreach (GameObject cube in pathfindingCubeList) {
+			cube.GetComponent<GridBox> ().linked = false;
+		}
+		pathfindingCubeList.Clear();
+		// x, z, y
+		// grid location
+//		for (int y = 0; y < gameManager.totalCubesInY; y++) {
+//			for (int z = 0; z < gameManager.totalCubesInZ; z++) {
+//				for (int x = 0; x < gameManager.totalCubesInX; x++) {
+//					GameObject GridObject = (GameObject)GridLocToGridObjLookup[new Vector3 (x, z, y)];
+//					GridObject.GetComponent<GridBox> ().linked = false;
+//					GridObject.GetComponent<GridBox> ().cubeRecorded = false;
+//				}
+//			}
+//		}
+	}
+
+	public void RecursiveCall(GameObject originNode, int spread) {
+		if (spread <= 0) {
+			return;
+		}
+		GridBox originNodeScript = originNode.GetComponent<GridBox> ();
+		originNodeScript.SetLinked (true);
+		Vector3 originNodeLoc = new Vector3(originNodeScript.gridLocX, originNodeScript.gridLocZ, originNodeScript.gridLocY);
+		AddCubeToPathFindingList (originNodeLoc, originNode);
+
+		List<GameObject> legalNeighboursRef = originNodeScript.GetLegalNeighbours ();
+		//Debug.Log ("originNode x z y " + originNode.GetComponent<GridBox> ().gridLocX + " " + originNode.GetComponent<GridBox> ().gridLocZ + " " + originNode.GetComponent<GridBox> ().gridLocY + " Spread: " + spread);
+		for (int i = 0; i < legalNeighboursRef.Count; i++) {
+			GridBox neighNodeScript = legalNeighboursRef [i].GetComponent<GridBox> ();
+			Vector3 neighgridLoc = new Vector3(neighNodeScript.gridLocX, neighNodeScript.gridLocZ, neighNodeScript.gridLocY);
+			if (pathfindingCubeList [neighgridLoc] == null) {
+				RecursiveCall (legalNeighboursRef [i], spread - 1);
+			}
+		}
+		return;
+	}
+
+
+	public void SendOutRays(bool activate, Vector3 ownGridLoc, int playerMove) {
+		Debug.Log ("SendOutRays");
+
+		int spread = playerMove;
+
+		pathFindingGrid = new int[spread, spread];
+		GameObject gridObject = (GameObject)GridLocToGridObjLookup [ownGridLoc];
+
+		if (activate) {
+			RecursiveCall (gridObject, spread);
+		} else {
+			gridObject.GetComponent<GridBox> ().SetLinked(false);
+		}
+	}
+
+
+
+	public void AddCubeToPathFindingList(Vector3 gridLoc, GameObject cube) {
+		pathfindingCubeList.Add (gridLoc, cube);
+	}
+//	public List<GameObject> GetPathFindingCubeList() {
+//		return pathfindingCubeList;
+//	}
+//
 
 
 	//////////////////////////////////////////////
